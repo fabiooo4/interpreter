@@ -41,6 +41,7 @@
               rust-analyzer
               pre-commit
               rustPackages.clippy
+              gdb
 
               jre
               antlr

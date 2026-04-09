@@ -5,7 +5,10 @@ use std::process::Command;
 
 fn main() {
     // List of grammar files with optional additional argument to be passed to the antlr tool
-    let grammars: Vec<(&str, Option<&str>)> = vec![("IntExpr", None)];
+    let grammars: Vec<(&str, Option<Vec<&str>>)> = vec![
+        ("IntExpr", Some(vec!["-visitor"])),
+        ("VisitorBasic", Some(vec!["-visitor"])),
+    ];
 
     let antlr_path = find_antlr_jar();
 
@@ -52,7 +55,7 @@ fn find_antlr_jar() -> PathBuf {
 
 fn gen_for_grammar(
     grammar_file_name: &str,
-    additional_arg: Option<&str>,
+    additional_arg: Option<Vec<&str>>,
     antlr_path: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
     let input_path = env::current_dir().unwrap().join("grammars");
@@ -75,7 +78,7 @@ fn gen_for_grammar(
         .arg("-o")
         .arg(&dest_path)
         .arg(&file_name)
-        .args(additional_arg)
+        .args(additional_arg.unwrap_or_default())
         .spawn()
         .expect("antlr tool failed to start")
         .wait_with_output()?;

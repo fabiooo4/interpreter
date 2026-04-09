@@ -1,5 +1,13 @@
-use antlr_rust::{InputStream, common_token_stream::CommonTokenStream};
-use int_expr_interpreter::parser::{intexprlexer::IntExprLexer, intexprparser::IntExprParser};
+use antlr_rust::{
+    InputStream,
+    common_token_stream::CommonTokenStream,
+    tree::{ParseTree, ParseTreeVisitorCompat},
+};
+
+use int_expr_interpreter::{
+    interpreter::IntExprInterpreter,
+    parser::{intexprlexer::IntExprLexer, intexprparser::IntExprParser},
+};
 
 fn main() {
     println!("Enter a string to parse:");
@@ -21,5 +29,12 @@ fn main() {
     let mut parser = IntExprParser::new(tokens);
 
     // Execute the grammar from the 'main' nonterminal symbol
-    let _tree = parser.main();
+    let tree = parser.main().unwrap();
+
+    let mut interpreter = IntExprInterpreter(0);
+    let intperpreted_result = interpreter.visit(&*tree);
+
+    println!("{}", tree.to_string_tree(&*parser));
+
+    println!("Interpreted result = {intperpreted_result}");
 }
