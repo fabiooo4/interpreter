@@ -4,9 +4,9 @@ use antlr_rust::{
     tree::{ParseTree, ParseTreeVisitorCompat},
 };
 
-use int_expr_interpreter::{
-    interpreter::IntExprInterpreter,
-    parser::{intexprlexer::IntExprLexer, intexprparser::IntExprParser},
+use imp_interpreter::{
+    interpreter::ImpInterpreter,
+    parser::{implexer::ImpLexer, impparser::ImpParser},
 };
 
 fn main() {
@@ -19,19 +19,19 @@ fn main() {
         .expect("Failed to read line");
     let input = InputStream::new(input_string.trim());
 
-    // Create a TokenSource from the CharStream using the IntExpr grammar
-    let lexer = IntExprLexer::new(input);
+    // Create a TokenSource from the CharStream using the Imp grammar
+    let lexer = ImpLexer::new(input);
 
     // Obtain the tokens from the TokenSource as a TokenStream
     let tokens = CommonTokenStream::new(lexer);
 
-    // Create a parser that parses the IntExpr grammar
-    let mut parser = IntExprParser::new(tokens);
+    // Create a parser that parses the Imp grammar
+    let mut parser = ImpParser::new(tokens);
 
     // Execute the grammar from the 'main' nonterminal symbol
     let tree = parser.main().unwrap();
 
-    let mut interpreter = IntExprInterpreter(0);
+    let mut interpreter = ImpInterpreter(0.);
     let intperpreted_result = interpreter.visit(&*tree);
 
     println!("{}", tree.to_string_tree(&*parser));

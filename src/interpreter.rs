@@ -1,19 +1,23 @@
 use core::panic;
 
-use antlr_rust::tree::{ErrorNode, ParseTree, ParseTreeVisitorCompat};
-
-use crate::parser::{
-    intexprparser::{
-        AddContext, IntExprParserContextType, MainContext, MainContextAttrs, ValContext,
-    },
-    intexprvisitor::IntExprVisitorCompat,
+use antlr_rust::{
+    token::Token,
+    tree::{ErrorNode, ParseTree, ParseTreeVisitorCompat},
 };
 
-pub struct IntExprInterpreter(pub u32);
+use crate::parser::{
+    impparser::{
+        self, ADD, DIV, ImpParserContextType, MOD, MUL, MainContext, MainContextAttrs, NegContext,
+        PowContext, Prec1opContext, Prec2opContext, SUB, ValContext,
+    },
+    impvisitor::ImpVisitorCompat,
+};
 
-impl ParseTreeVisitorCompat<'_> for IntExprInterpreter {
-    type Node = IntExprParserContextType;
-    type Return = u32;
+pub struct ImpInterpreter(pub f32);
+
+impl ParseTreeVisitorCompat<'_> for ImpInterpreter {
+    type Node = ImpParserContextType;
+    type Return = f32;
 
     fn temp_result(&mut self) -> &mut Self::Return {
         &mut self.0
@@ -28,10 +32,14 @@ impl ParseTreeVisitorCompat<'_> for IntExprInterpreter {
     }
 }
 
-impl IntExprVisitorCompat<'_> for IntExprInterpreter {
+impl ImpVisitorCompat<'_> for ImpInterpreter {
     fn visit_main(&mut self, ctx: &MainContext<'_>) -> Self::Return {
-        self.visit(&*ctx.exp().unwrap())
+        self.visit(&*ctx.prog().unwrap())
     }
+
+    //
+    // Expressions
+    //
 
     fn visit_val(&mut self, ctx: &ValContext<'_>) -> Self::Return {
         ctx.get_text()
@@ -39,37 +47,83 @@ impl IntExprVisitorCompat<'_> for IntExprInterpreter {
             .expect("Failed to parse integer value")
     }
 
-    fn visit_add(&mut self, ctx: &AddContext<'_>) -> Self::Return {
-        let left = self.visit(
+    fn visit_prec1op(&mut self, ctx: &Prec1opContext) -> Self::Return {
+        let operator = ctx.op.to_owned().unwrap().token_type;
+
+        let lhs = self.visit(
             &*ctx
-                .left
+                .lhs
                 .clone()
                 .expect("Failed to parse left value for addition"),
         );
-        let right = self.visit(
+        let rhs = self.visit(
             &*ctx
-                .right
+                .rhs
                 .clone()
                 .expect("Failed to parse right value for addition"),
         );
 
-        left + right
+        match operator {
+            MUL => lhs * rhs,
+            DIV => lhs / rhs,
+            MOD => lhs % rhs,
+            _ => {
+                todo!("error")
+            }
+        }
     }
 
-    fn visit_mul(&mut self, ctx: &crate::parser::intexprparser::MulContext<'_>) -> Self::Return {
-        let left = self.visit(
+    fn visit_pow(&mut self, ctx: &PowContext<'_>) -> Self::Return {
+        let lhs = self.visit(
             &*ctx
-                .left
+                .lhs
                 .clone()
-                .expect("Failed to parse left value for multiplication"),
+                .expect("Failed to parse left value for addition"),
         );
-        let right = self.visit(
+        let rhs = self.visit(
             &*ctx
-                .right
+                .rhs
                 .clone()
-                .expect("Failed to parse right value for multiplication"),
+                .expect("Failed to parse right value for addition"),
         );
 
-        left * right
+        lhs.powf(rhs)
+    }
+
+    fn visit_prec2op(&mut self, ctx: &Prec2opContext<'_>) -> Self::Return {
+        let operator = ctx.op.to_owned().unwrap().token_type;
+
+        let lhs = self.visit(
+            &*ctx
+                .lhs
+                .clone()
+                .expect("Failed to parse left value for addition"),
+        );
+        let rhs = self.visit(
+            &*ctx
+                .rhs
+                .clone()
+                .expect("Failed to parse right value for addition"),
+        );
+
+        match operator {
+            ADD => lhs + rhs,
+            SUB => lhs - rhs,
+            _ => {
+                todo!("error")
+            }
+        }
+    }
+
+    fn visit_neg(&mut self, ctx: &NegContext<'_>) -> Self::Return {
+        todo!("visit_neg")
+    }
+
+    //
+    // Variables
+    //
+
+    fn visit_declaration(&mut self, ctx: &impparser::DeclarationContext<'_>) -> Self::Return {
+        todo!("visit_declaration")
     }
 }

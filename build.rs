@@ -6,8 +6,7 @@ use std::process::Command;
 fn main() {
     // List of grammar files with optional additional argument to be passed to the antlr tool
     let grammars: Vec<(&str, Option<Vec<&str>>)> = vec![
-        ("IntExpr", Some(vec!["-visitor"])),
-        ("VisitorBasic", Some(vec!["-visitor"])),
+        ("Imp", Some(vec!["-visitor"])),
     ];
 
     let antlr_path = find_antlr_jar();
