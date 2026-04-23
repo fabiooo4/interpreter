@@ -1,40 +1,34 @@
-use antlr_rust::{
-    InputStream,
-    common_token_stream::CommonTokenStream,
-    tree::{ParseTree, ParseTreeVisitorCompat},
-};
+use core::panic;
+use std::{env::args, fs, io::Read};
 
-use imp_interpreter::{
-    interpreter::ImpInterpreter,
-    parser::{implexer::ImpLexer, impparser::ImpParser},
-};
+use antlr_rust::tree::ParseTreeVisitorCompat;
+
+use imp_interpreter::interpreter::ImpInterpreter;
 
 fn main() {
-    println!("Enter a string to parse:");
+    let args: Vec<String> = args().collect();
 
-    // Get user input from stdin
     let mut input_string = String::new();
-    std::io::stdin()
-        .read_line(&mut input_string)
-        .expect("Failed to read line");
-    let input = InputStream::new(input_string.trim());
+    match args.get(1) {
+        Some(input_path) => {
+            let mut file = fs::File::open(input_path).unwrap_or_else(|e| panic!("{e}"));
 
-    // Create a TokenSource from the CharStream using the Imp grammar
-    let lexer = ImpLexer::new(input);
+            file.read_to_string(&mut input_string)
+                .unwrap_or_else(|e| panic!("{e}"));
+        }
+        None => {
+            println!("Enter a string to parse:");
 
-    // Obtain the tokens from the TokenSource as a TokenStream
-    let tokens = CommonTokenStream::new(lexer);
+            // Get user input from stdin
+            std::io::stdin()
+                .read_line(&mut input_string)
+                .unwrap_or_else(|e| panic!("{e}"));
+        }
+    }
 
-    // Create a parser that parses the Imp grammar
-    let mut parser = ImpParser::new(tokens);
-
-    // Execute the grammar from the 'main' nonterminal symbol
-    let tree = parser.main().unwrap();
-
-    let mut interpreter = ImpInterpreter(0.);
+    let mut interpreter = ImpInterpreter::new();
+    let tree = ImpInterpreter::parse(&input_string);
     let intperpreted_result = interpreter.visit(&*tree);
 
-    println!("{}", tree.to_string_tree(&*parser));
-
-    println!("Interpreted result = {intperpreted_result}");
+    println!("{intperpreted_result}");
 }
