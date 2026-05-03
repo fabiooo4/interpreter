@@ -1,55 +1,53 @@
-# Rust antlr4 template
+# Basic interpreter
 
-This is a template for using antlr4 with Rust. It includes just the necessary files to
-generate all the code for a simple grammar to use in Rust.
+A simple interpreter for a basic programming language, implemented in Rust
+using ANTLR4 for lexical analysis and parsing. This project is designed for educational
+purposes.
+
+## Language Features
+
+- Variables: Support for declaration with `let` and mutation.
+- Control Flow: `if`, `else`, and `while` loops.
+- Data Types: Integers, Floats, Booleans, Strings, and Characters.
+- Operators:
+    - Arithmetic: `+`, `-`, `*`, `/`, `mod`, `^` (power)
+    - Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`
+    - Logical: `and`, `or`, `not`
+    - String: `:` (concatenation)
+- Built-in Functions: `print()` for output and `to_str()` for type conversion.
 
 ## Usage
 
-1. Create a new repo with this template
+Ensure you have Rust and Cargo installed on your system.
 
-```
-gh repo create --template fabiooo4/antlr4rust-template <repo-name>
-```
+### Running from a File
 
-2. Download required dependencies:
-   - [antlr4 fork with Rust target support version 0.3.0-beta](https://github.com/rrevenantt/antlr4rust/releases/tag/antlr4-4.8-2-Rust0.3.0-beta)
-   - Java JDK
+To execute a program stored in a file:
 
-3. Add the path to the antlr4 jar file to the `ANTLR_JAR` environment variable
-
-```
-export ANTLR_JAR=/path/to/antlr4-4.8-2-SNAPSHOT-complete.jar
+```bash
+cargo run -- path/to/program
 ```
 
-4. Build the project
+### Running from Standard Input
 
+If no file path is provided, the interpreter will prompt for a single line of input:
+
+```bash
+cargo run
 ```
-cargo build
-```
 
-### Add new grammars
-
-To add new grammars put them into the `grammars` folder and add the corresponding
-file name to the `build.rs` file. The generated modules will be placed in the `target`
-directory accessible by the `OUT_DIR` environment variable, so to use them
-you need to include them in the `src/parser.rs` module. For example:
+## Example Program
 
 ```rust
-// src/parser.rs
-#![allow(warnings)]
+let n = 10;
+let i = 0;
+let sum = 0;
 
-pub mod binwordslexer {
-    include!(concat!(env!("OUT_DIR"), "/binwordslexer.rs"));
+while i < n {
+    sum = sum + i;
+    i = i + 1;
 }
 
-pub mod binwordsparser {
-    include!(concat!(env!("OUT_DIR"), "/binwordsparser.rs"));
-}
-
-pub mod binwordslistener {
-    include!(concat!(env!("OUT_DIR"), "/binwordslistener.rs"));
-}
+print("The sum is: ");
+print(sum);
 ```
-
-They will then be available as `parser::binwordslexer`, `parser::binwordsparser` and
-`parser::binwordslistener` in the rest of the code.
