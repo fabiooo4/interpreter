@@ -31,4 +31,5 @@ fn main() {
     let intperpreted_result = interpreter.visit(&*tree);
 
     println!("{intperpreted_result}");
+    println!("\n{:#?}", interpreter);
 }
