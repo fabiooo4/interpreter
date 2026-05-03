@@ -55,16 +55,19 @@ impl FromStr for Value {
         }
 
         // String
-        // TODO: Handle escaping
         if s.starts_with('"') && s.ends_with('"') {
-            let str_without_quotes = s[1..s.len() - 1].to_string();
+            let str_without_quotes = unescaper::unescape(&s[1..s.len() - 1])
+                .unwrap_or_else(|_| panic!("Failed to unescape string: '{}'", s));
             return Ok(Value::String(str_without_quotes));
         }
 
         // Char
-        // TODO: Handle escaping
         if s.starts_with('\'') && s.ends_with('\'') && s.len() >= 3 {
-            let char_without_quotes = s.chars().nth(1).unwrap();
+            let char_without_quotes = unescaper::unescape(s)
+                .unwrap_or_else(|_| panic!("Failed to unescape char: '{}'", s))
+                .chars()
+                .nth(1)
+                .unwrap();
             return Ok(Value::Char(char_without_quotes));
         }
 

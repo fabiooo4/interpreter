@@ -277,6 +277,13 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
         Value::String(val.to_string())
     }
 
+    fn visit_strConcat(&mut self, ctx: &impparser::StrConcatContext<'_>) -> Self::Return {
+        let lhs = self.visit(&*ctx.lhs.clone().unwrap());
+        let rhs = self.visit(&*ctx.rhs.clone().unwrap());
+
+        Value::String(format!("{}{}", lhs, rhs))
+    }
+
     fn visit_if(&mut self, ctx: &impparser::IfContext<'_>) -> Self::Return {
         let condition = self.visit(&*ctx.exp().unwrap());
         if let Value::Bool(true) = condition {
@@ -557,6 +564,90 @@ mod test {
         let mut interpreter = ImpInterpreter::new();
         let res = interpreter.visit(&*ast);
         assert_eq!(Some(&Value::Bool(false)), interpreter.memory.get("branch"));
+        assert_eq!(Value::Void, res);
+    }
+
+    #[test]
+    fn test_to_str() {
+        let program = "
+         to_str(123);
+        ";
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(Value::String("123".to_string()), res);
+    }
+
+    #[test]
+    fn test_str_concat() {
+        let program = "
+         \"Hello, \" : \"world!\"
+        ";
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(Value::String("Hello, world!".to_string()), res);
+    }
+
+    #[test]
+    fn test_single_line_comment() {
+        let program = "
+         // This is a single line comment
+         let a = 5; // This is another comment
+        ";
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(Some(&Value::Int(5)), interpreter.memory.get("a"));
+        assert_eq!(Value::Void, res);
+    }
+
+    #[test]
+    fn test_multi_line_comment() {
+        let program = "
+         /* This is a multi-line comment
+            let b = 10;
+         */
+         let a = 5; /* Another comment */
+        ";
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(Some(&Value::Int(5)), interpreter.memory.get("a"));
+        assert_eq!(None, interpreter.memory.get("b"));
+        assert_eq!(Value::Void, res);
+    }
+
+    #[test]
+    fn test_string_escaping() {
+        let program = r#"
+         let str = "Hello\nWorld\t!";
+        "#;
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(
+            Some(&Value::String("Hello\nWorld\t!".to_string())),
+            interpreter.memory.get("str")
+        );
+        assert_eq!(Value::Void, res);
+    }
+
+    #[test]
+    fn test_char_escaping() {
+        let program = r#"
+         let ch = '\n';
+        "#;
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(Some(&Value::Char('\n')), interpreter.memory.get("ch"));
         assert_eq!(Value::Void, res);
     }
 }
