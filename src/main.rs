@@ -1,9 +1,7 @@
 use core::panic;
 use std::{env::args, fs, io::Read};
 
-use antlr_rust::tree::ParseTreeVisitorCompat;
-
-use imp_interpreter::interpreter::ImpInterpreter;
+use imp_interpreter::{SyntaxTree, interpreter::ImpInterpreter, type_checker::ImpTypeChecker};
 
 fn main() {
     let args: Vec<String> = args().collect();
@@ -27,9 +25,15 @@ fn main() {
     }
 
     let mut interpreter = ImpInterpreter::new();
-    let tree = ImpInterpreter::parse(&input_string);
-    let intperpreted_result = interpreter.visit(&*tree);
+    let tree: SyntaxTree = ImpInterpreter::parse(&input_string);
+
+    let mut type_checker = ImpTypeChecker::new();
+    type_checker.check(&tree);
+
+    let intperpreted_result = interpreter.interpret(&tree);
 
     println!("{intperpreted_result}");
+
+    println!("\n{:#?}", type_checker);
     println!("\n{:#?}", interpreter);
 }

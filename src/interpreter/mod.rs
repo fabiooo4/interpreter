@@ -1,30 +1,25 @@
-mod memory;
 mod panic_error_listener;
 mod value;
 
 use core::panic;
-use std::rc::Rc;
 
 use antlr_rust::{
     InputStream, Parser,
     common_token_stream::CommonTokenStream,
-    parser_rule_context::BaseParserRuleContext,
     tree::{ErrorNode, ParseTree, ParseTreeVisitorCompat},
 };
 
 use crate::{
-    interpreter::{
-        memory::{HashMemory, Memory},
-        panic_error_listener::PanicErrorListener,
-        value::Value,
-    },
+    SyntaxTree,
+    interpreter::{panic_error_listener::PanicErrorListener, value::Value},
+    memory::{HashMemory, Memory},
     parser::{
         implexer::{ADD, AND, DIV, EQ, GE, GT, ImpLexer, LE, LT, MOD, MUL, NEQ, OR, SUB},
         impparser::{
-            self, AssignContextAttrs, IdContextAttrs, IfContextAttrs, IfElseContextAttrs,
-            ImpParser, ImpParserContextType, IntContext, MainContext, MainContextAttrs,
-            MainContextExt, MutateContextAttrs, NegContextAttrs, NotContextAttrs,
-            ParenContextAttrs, PrintContextAttrs, ToStrContextAttrs, WhileContextAttrs,
+            self, DeclContextAttrs, IdContextAttrs, IfContextAttrs, IfElseContextAttrs, ImpParser,
+            ImpParserContextType, IntContext, MainContext, MainContextAttrs, MutationContextAttrs,
+            NegContextAttrs, NotContextAttrs, ParenContextAttrs, PrintContextAttrs,
+            ToStrContextAttrs, WhileContextAttrs,
         },
         impvisitor::ImpVisitorCompat,
     },
@@ -42,7 +37,7 @@ impl ImpInterpreter {
         ImpInterpreter::default()
     }
 
-    pub fn parse(input: &str) -> Rc<BaseParserRuleContext<'_, MainContextExt<'_>>> {
+    pub fn parse(input: &str) -> SyntaxTree<'_> {
         let input = InputStream::new(input.trim());
 
         // Create a TokenSource from the CharStream using the Imp grammar
@@ -60,6 +55,10 @@ impl ImpInterpreter {
 
         // Execute the grammar from the 'main' nonterminal symbol
         parser.main().unwrap()
+    }
+
+    pub fn interpret(&mut self, ast: &SyntaxTree) -> Value {
+        self.visit(&**ast)
     }
 }
 
@@ -198,7 +197,7 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
 
         match operator {
             EQ => Value::Bool(lhs == rhs),
-            NEQ => Value::Bool(lhs == rhs),
+            NEQ => Value::Bool(lhs != rhs),
             _ => unreachable!(),
         }
     }
@@ -230,7 +229,7 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
     // Variables {
     //
 
-    fn visit_assign(&mut self, ctx: &impparser::AssignContext<'_>) -> Self::Return {
+    fn visit_decl(&mut self, ctx: &impparser::DeclContext<'_>) -> Self::Return {
         let var_name = ctx.ID().unwrap().get_text();
         let val = self.visit(&*ctx.exp().unwrap());
 
@@ -249,7 +248,7 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
         val.clone()
     }
 
-    fn visit_mutate(&mut self, ctx: &impparser::MutateContext<'_>) -> Self::Return {
+    fn visit_mutation(&mut self, ctx: &impparser::MutationContext<'_>) -> Self::Return {
         let var_name = ctx.ID().unwrap().get_text();
         let exp = self.visit(&*ctx.exp().unwrap());
         self.memory
@@ -416,7 +415,7 @@ mod test {
     #[test]
     fn test_assign() {
         let program = "
-         let a = 2;
+         let a: int = 2;
         ";
 
         let ast = ImpInterpreter::parse(program);
@@ -429,7 +428,7 @@ mod test {
     #[test]
     fn test_var_exp() {
         let program = "
-         let a = 2; print(a);
+         let a: int = 2; print(a);
         ";
 
         let ast = ImpInterpreter::parse(program);
@@ -456,9 +455,9 @@ mod test {
     #[test]
     fn test_program() {
         let program = "
-         let base = 5;
-         let height = 10;
-         let area = base * height;
+         let base: int = 5;
+         let height: int = 10;
+         let area: int = base * height;
          print(area);
         ";
 
@@ -475,7 +474,7 @@ mod test {
     fn test_if_true() {
         let program = "
          if 3 > 2 {
-           let branch = true;
+           let branch: int = true;
          }
         ";
 
@@ -490,7 +489,7 @@ mod test {
     fn test_if_false() {
         let program = "
          if 3 < 2 {
-           let branch = true;
+           let branch: int = true;
          }
         ";
 
@@ -504,7 +503,7 @@ mod test {
     #[test]
     fn test_while_false() {
         let program = "
-        let i = 0;
+        let i: int = 0;
          while i > 2 {
            i = i + 1;
          }
@@ -520,7 +519,7 @@ mod test {
     #[test]
     fn test_while_true() {
         let program = "
-        let i = 0;
+        let i: int = 0;
          while i < 2 {
            i = i + 1;
          }
@@ -537,9 +536,9 @@ mod test {
     fn test_if_else_true() {
         let program = "
          if 3 > 2 {
-           let branch = true;
+           let branch: int = true;
          } else {
-           let branch = false;
+           let branch: int = false;
          }
         ";
 
@@ -554,9 +553,9 @@ mod test {
     fn test_if_else_false() {
         let program = "
          if 3 < 2 {
-           let branch = true;
+           let branch: int = true;
          } else {
-           let branch = false;
+           let branch: int = false;
          }
         ";
 
@@ -595,7 +594,7 @@ mod test {
     fn test_single_line_comment() {
         let program = "
          // This is a single line comment
-         let a = 5; // This is another comment
+         let a: int = 5; // This is another comment
         ";
 
         let ast = ImpInterpreter::parse(program);
@@ -611,7 +610,7 @@ mod test {
          /* This is a multi-line comment
             let b = 10;
          */
-         let a = 5; /* Another comment */
+         let a: int = 5; /* Another comment */
         ";
 
         let ast = ImpInterpreter::parse(program);
@@ -625,7 +624,7 @@ mod test {
     #[test]
     fn test_string_escaping() {
         let program = r#"
-         let str = "Hello\nWorld\t!";
+         let str: string = "Hello\nWorld\t!";
         "#;
 
         let ast = ImpInterpreter::parse(program);
@@ -641,7 +640,7 @@ mod test {
     #[test]
     fn test_char_escaping() {
         let program = r#"
-         let ch = '\n';
+         let ch: char = '\n';
         "#;
 
         let ast = ImpInterpreter::parse(program);

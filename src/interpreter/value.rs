@@ -30,7 +30,7 @@ impl Display for Value {
             Value::Bool(val) => write!(f, "{}", val),
             Value::String(val) => write!(f, "{}", val),
             Value::Char(val) => write!(f, "{}", val),
-            Value::Void => write!(f, "()"),
+            Value::Void => Ok(()),
         }
     }
 }
@@ -71,9 +71,7 @@ impl FromStr for Value {
             return Ok(Value::Char(char_without_quotes));
         }
 
-        panic!(
-            "Failed to parse token: Undefined type for '{s}', an implementation of from_str is needed"
-        )
+        panic!("Failed to parse token: Undefined type for '{s}'")
     }
 }
 

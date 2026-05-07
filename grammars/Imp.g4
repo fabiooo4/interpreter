@@ -4,14 +4,16 @@ main : prog EOF;
 
 prog : stmt+ | exp;
 
-stmt : VARIABLE ID ASSIGN exp SEMICOLON                                             # assign
-     | ID ASSIGN exp SEMICOLON                                                      # mutate
+stmt : decl                                                                         # declaration
+     | ID ASSIGN exp SEMICOLON                                                      # mutation
      | IF exp LBRACE stmt+ RBRACE                                                   # if
      | IF exp LBRACE true_branch=stmt+ RBRACE ELSE LBRACE false_branch=stmt+ RBRACE # ifElse
      | WHILE exp LBRACE stmt* RBRACE                                                # while
      | PRINT LPAR exp RPAR SEMICOLON                                                # print
      | TOSTR LPAR exp RPAR SEMICOLON                                                # toStr
      ;
+
+decl : DECLARATION ID ':' TYPE ASSIGN exp SEMICOLON;
 
 // Labels begin with # and rename each node of the ParseTree
 exp : SUB? INT                                  # int
@@ -32,6 +34,7 @@ exp : SUB? INT                                  # int
     | ID                                        # id
     ;
 
+TYPE : 'int' | 'float' | 'string' | 'char' | 'bool';
 
 INT          : NAT;
 fragment NAT : '0' | POS ;
@@ -79,11 +82,11 @@ STRCONCAT : ':'      ;
 PRINT     : 'print'  ;
 TOSTR     : 'to_str' ;
 
-IF       : 'if'    ;
-ELSE     : 'else'  ;
-WHILE    : 'while' ;
-ASSIGN   : '='     ;
-VARIABLE : 'let'   ;
+IF          : 'if'    ;
+ELSE        : 'else'  ;
+WHILE       : 'while' ;
+ASSIGN      : '='     ;
+DECLARATION : 'let'   ;
 
 ID       : [a-zA-Z]+ ;
 SEMICOLON : ';'      ;
