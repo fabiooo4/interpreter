@@ -28,7 +28,7 @@ impl Type {
         }
     }
 
-    pub fn cmp(&self, rhs: Self) -> Self {
+    pub fn cmp_type(&self, rhs: Self) -> Self {
         match (self, rhs) {
             (Type::Int, Type::Int) => *self,
             (Type::Float, Type::Float) => *self,
@@ -37,7 +37,7 @@ impl Type {
         }
     }
 
-    pub fn concat(&self, rhs: Type) -> Type {
+    pub fn concat(&self, rhs: Type) -> Self {
         match (self, rhs) {
             (Type::String, Type::String)
             | (Type::String, Type::Char)
@@ -45,6 +45,15 @@ impl Type {
             | (Type::Char, Type::Char) => Type::String,
 
             _ => panic!("Type mismatch: cannot concatenate '{}' and '{}'", self, rhs),
+        }
+    }
+
+    pub fn cast(self, cast_typ: Type) -> Self {
+        match (cast_typ, &self) {
+            (Type::Int, Type::Float) => Type::Int,
+            (Type::Float, Type::Int) => Type::Float,
+
+            _ => panic!("Cannot convert '{self}' to '{cast_typ}'"),
         }
     }
 }

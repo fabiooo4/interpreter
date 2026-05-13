@@ -4,6 +4,8 @@ use std::{
     str::FromStr,
 };
 
+use crate::type_checker::value_type::Type;
+
 type IntType = i32;
 type FloatType = f32;
 type StringType = String;
@@ -99,6 +101,15 @@ impl Value {
                 self.type_name(),
                 rhs.type_name()
             ),
+        }
+    }
+
+    pub fn cast(self, typ: Type) -> Self {
+        match (typ, &self) {
+            (Type::Int, Value::Float(val)) => Value::Int(*val as IntType),
+            (Type::Float, Value::Int(val)) => Value::Float(*val as FloatType),
+
+            _ => panic!("Cannot convert '{self}' to '{typ}'"),
         }
     }
 }

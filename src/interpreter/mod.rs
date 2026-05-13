@@ -2,6 +2,7 @@ mod panic_error_listener;
 mod value;
 
 use core::panic;
+use std::str::FromStr;
 
 use antlr_rust::{
     InputStream, Parser,
@@ -16,13 +17,14 @@ use crate::{
     parser::{
         implexer::{ADD, AND, DIV, EQ, GE, GT, ImpLexer, LE, LT, MOD, MUL, NEQ, OR, SUB},
         impparser::{
-            self, DeclContextAttrs, IdContextAttrs, IfContextAttrs, IfElseContextAttrs, ImpParser,
-            ImpParserContextType, IntContext, MainContext, MainContextAttrs, MutationContextAttrs,
-            NegContextAttrs, NotContextAttrs, ParenContextAttrs, PrintContextAttrs,
-            ToStrContextAttrs, WhileContextAttrs,
+            self, CastContextAttrs, DeclContextAttrs, IdContextAttrs, IfContextAttrs,
+            IfElseContextAttrs, ImpParser, ImpParserContextType, IntContext, MainContext,
+            MainContextAttrs, MutationContextAttrs, NegContextAttrs, NotContextAttrs,
+            ParenContextAttrs, PrintContextAttrs, ToStrContextAttrs, WhileContextAttrs,
         },
         impvisitor::ImpVisitorCompat,
     },
+    type_checker::value_type::Type,
 };
 
 #[derive(Default, Debug)]
@@ -220,6 +222,16 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
     //
     // Expressions {
     //
+    fn visit_cast(&mut self, ctx: &impparser::CastContext<'_>) -> Self::Return {
+        let exp = self.visit(&*ctx.exp().unwrap());
+        let cast_typ = &*ctx.TYPE().unwrap().get_text();
+
+        let cast_typ = Type::from_str(&ctx.TYPE().unwrap().get_text())
+            .unwrap_or_else(|e| panic!("Failed to convert '{exp}' to '{cast_typ}': {e}"));
+
+        exp.cast(cast_typ)
+    }
+
     fn visit_paren(&mut self, ctx: &impparser::ParenContext<'_>) -> Self::Return {
         self.visit(&*ctx.exp().unwrap())
     }

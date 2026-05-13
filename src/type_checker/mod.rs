@@ -1,9 +1,8 @@
-mod value_type;
+pub mod value_type;
 
+use std::str::FromStr;
 
-use antlr_rust::
-    tree::{ParseTree, ParseTreeVisitorCompat}
-;
+use antlr_rust::tree::{ParseTree, ParseTreeVisitorCompat};
 
 use crate::{
     SyntaxTree,
@@ -11,8 +10,8 @@ use crate::{
     parser::{
         implexer::{ADD, AND, DIV, MOD, MUL, OR, SUB},
         impparser::{
-            self, DeclContextAttrs, IdContextAttrs, IfContextAttrs, IfElseContextAttrs,
-            ImpParserContextType, MainContextAttrs, MutationContextAttrs,
+            self, CastContextAttrs, DeclContextAttrs, IdContextAttrs, IfContextAttrs,
+            IfElseContextAttrs, ImpParserContextType, MainContextAttrs, MutationContextAttrs,
             NegContextAttrs, NotContextAttrs, ParenContextAttrs, WhileContextAttrs,
         },
         impvisitor::ImpVisitorCompat,
@@ -155,7 +154,7 @@ impl ImpVisitorCompat<'_> for ImpTypeChecker {
         let lhs = self.visit(&*ctx.lhs.clone().unwrap());
         let rhs = self.visit(&*ctx.rhs.clone().unwrap());
 
-        lhs.cmp(rhs)
+        lhs.cmp_type(rhs)
     }
 
     fn visit_eq(&mut self, ctx: &impparser::EqContext<'_>) -> Self::Return {
@@ -187,6 +186,16 @@ impl ImpVisitorCompat<'_> for ImpTypeChecker {
     //
     // Expressions {
     //
+
+    fn visit_cast(&mut self, ctx: &impparser::CastContext<'_>) -> Self::Return {
+        let exp_typ = self.visit(&*ctx.exp().unwrap());
+        let cast_typ = &*ctx.TYPE().unwrap().get_text();
+
+        let cast_typ = Type::from_str(&ctx.TYPE().unwrap().get_text())
+            .unwrap_or_else(|e| panic!("Failed to convert '{exp_typ}' to '{cast_typ}': {e}"));
+
+        exp_typ.cast(cast_typ)
+    }
 
     fn visit_paren(&mut self, ctx: &impparser::ParenContext<'_>) -> Self::Return {
         self.visit(&*ctx.exp().unwrap())

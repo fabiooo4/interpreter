@@ -32,6 +32,7 @@ exp : SUB? INT                                  # int
     | LPAR exp RPAR                             # paren
     | SUB LPAR exp RPAR                         # neg
     | ID                                        # id
+    | LPAR TYPE RPAR exp                        # cast
     ;
 
 TYPE : 'int' | 'float' | 'string' | 'char' | 'bool';
