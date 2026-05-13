@@ -97,6 +97,9 @@ impl Mul for Type {
             (Type::Int, Type::Int) => self,
             (Type::Float, Type::Float) => self,
 
+            // Implicitly convert int to float
+            (Type::Float, Type::Int) | (Type::Int, Type::Float) => Type::Float,
+
             _ => panic!(
                 "Type mismatch: cannot apply 'mul' operator on '{}' and '{}'",
                 self, rhs,
@@ -112,6 +115,9 @@ impl Div for Type {
         match (&self, &rhs) {
             (Type::Int, Type::Int) => self,
             (Type::Float, Type::Float) => self,
+
+            // Implicitly convert int to float
+            (Type::Float, Type::Int) | (Type::Int, Type::Float) => Type::Float,
 
             _ => panic!(
                 "Type mismatch: cannot apply 'div' operator on '{}' and '{}'",
@@ -129,6 +135,9 @@ impl Rem for Type {
             (Type::Int, Type::Int) => self,
             (Type::Float, Type::Float) => self,
 
+            // Implicitly convert int to float
+            (Type::Float, Type::Int) | (Type::Int, Type::Float) => Type::Float,
+
             _ => panic!(
                 "Type mismatch: cannot apply 'rem' operator on '{}' and '{}'",
                 self, rhs,
@@ -145,6 +154,9 @@ impl Add for Type {
             (Type::Int, Type::Int) => self,
             (Type::Float, Type::Float) => self,
 
+            // Implicitly convert int to float
+            (Type::Float, Type::Int) | (Type::Int, Type::Float) => Type::Float,
+
             _ => panic!(
                 "Type mismatch: cannot apply 'add' operator on '{}' and '{}'",
                 self, rhs,
@@ -160,6 +172,9 @@ impl Sub for Type {
         match (&self, &rhs) {
             (Type::Int, Type::Int) => self,
             (Type::Float, Type::Float) => self,
+
+            // Implicitly convert int to float
+            (Type::Float, Type::Int) | (Type::Int, Type::Float) => Type::Float,
 
             _ => panic!(
                 "Type mismatch: cannot apply 'sub' operator on '{}' and '{}'",

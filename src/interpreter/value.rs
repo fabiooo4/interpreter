@@ -126,6 +126,10 @@ impl Mul for Value {
             (Value::Int(lhs), Value::Int(rhs)) => Value::Int(lhs.mul(*rhs)),
             (Value::Float(lhs), Value::Float(rhs)) => Value::Float(lhs.mul(*rhs)),
 
+            // Implicitly convert int to float
+            (Value::Float(lhs), Value::Int(rhs)) => Value::Float(lhs.mul(*rhs as FloatType)),
+            (Value::Int(lhs), Value::Float(rhs)) => Value::Float((*lhs as FloatType).mul(*rhs)),
+
             _ => panic!(
                 "Type mismatch: cannot apply 'mul' operator on '{}' and '{}'",
                 self.type_name(),
@@ -142,6 +146,10 @@ impl Div for Value {
         match (&self, &rhs) {
             (Value::Int(lhs), Value::Int(rhs)) => Value::Int(lhs.div(*rhs)),
             (Value::Float(lhs), Value::Float(rhs)) => Value::Float(lhs.div(*rhs)),
+
+            // Implicitly convert int to float
+            (Value::Float(lhs), Value::Int(rhs)) => Value::Float(lhs.div(*rhs as FloatType)),
+            (Value::Int(lhs), Value::Float(rhs)) => Value::Float((*lhs as FloatType).div(*rhs)),
 
             _ => panic!(
                 "Type mismatch: cannot apply 'div' operator on '{}' and '{}'",
@@ -160,6 +168,9 @@ impl Rem for Value {
             (Value::Int(lhs), Value::Int(rhs)) => Value::Int(lhs.rem(*rhs)),
             (Value::Float(lhs), Value::Float(rhs)) => Value::Float(lhs.rem(*rhs)),
 
+            // Implicitly convert int to float
+            (Value::Float(lhs), Value::Int(rhs)) => Value::Float(lhs.rem(*rhs as FloatType)),
+            (Value::Int(lhs), Value::Float(rhs)) => Value::Float((*lhs as FloatType).rem(*rhs)),
             _ => panic!(
                 "Type mismatch: cannot apply 'rem' operator on '{}' and '{}'",
                 self.type_name(),
@@ -177,6 +188,10 @@ impl Add for Value {
             (Value::Int(lhs), Value::Int(rhs)) => Value::Int(lhs.add(*rhs)),
             (Value::Float(lhs), Value::Float(rhs)) => Value::Float(lhs.add(*rhs)),
 
+            // Implicitly convert int to float
+            (Value::Float(lhs), Value::Int(rhs)) => Value::Float(lhs.add(*rhs as FloatType)),
+            (Value::Int(lhs), Value::Float(rhs)) => Value::Float((*lhs as FloatType).add(*rhs)),
+
             _ => panic!(
                 "Type mismatch: cannot apply 'add' operator on '{}' and '{}'",
                 self.type_name(),
@@ -193,6 +208,10 @@ impl Sub for Value {
         match (&self, &rhs) {
             (Value::Int(lhs), Value::Int(rhs)) => Value::Int(lhs.sub(*rhs)),
             (Value::Float(lhs), Value::Float(rhs)) => Value::Float(lhs.sub(*rhs)),
+
+            // Implicitly convert int to float
+            (Value::Float(lhs), Value::Int(rhs)) => Value::Float(lhs.sub(*rhs as FloatType)),
+            (Value::Int(lhs), Value::Float(rhs)) => Value::Float((*lhs as FloatType).sub(*rhs)),
 
             _ => panic!(
                 "Type mismatch: cannot apply 'sub' operator on '{}' and '{}'",
