@@ -17,10 +17,11 @@ use crate::{
     parser::{
         implexer::{ADD, AND, DIV, EQ, GE, GT, ImpLexer, LE, LT, MOD, MUL, NEQ, OR, SUB},
         impparser::{
-            self, CastContextAttrs, DeclContextAttrs, IdContextAttrs, IfContextAttrs,
-            IfElseContextAttrs, ImpParser, ImpParserContextType, IntContext, MainContext,
-            MainContextAttrs, MutationContextAttrs, NegContextAttrs, NotContextAttrs,
-            ParenContextAttrs, PrintContextAttrs, ToStrContextAttrs, WhileContextAttrs,
+            self, AllocDeclarationContextAttrs, AssignDeclarationContextAttrs, BlockContextAttrs,
+            CastContextAttrs, IdContextAttrs, IfContextAttrs, IfElseContextAttrs, ImpParser,
+            ImpParserContextType, IntContext, MainContext, MainContextAttrs, MutationContextAttrs,
+            NegContextAttrs, NotContextAttrs, OptionalBlockContextAttrs, ParenContextAttrs,
+            PrintContextAttrs, ToStrContextAttrs, WhileContextAttrs,
         },
         impvisitor::ImpVisitorCompat,
     },
@@ -241,11 +242,25 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
     // Variables {
     //
 
-    fn visit_decl(&mut self, ctx: &impparser::DeclContext<'_>) -> Self::Return {
+    fn visit_assignDeclaration(
+        &mut self,
+        ctx: &impparser::AssignDeclarationContext<'_>,
+    ) -> Self::Return {
         let var_name = ctx.ID().unwrap().get_text();
         let val = self.visit(&*ctx.exp().unwrap());
 
         self.memory.add(var_name, val);
+
+        Value::Void
+    }
+
+    fn visit_allocDeclaration(
+        &mut self,
+        ctx: &impparser::AllocDeclarationContext<'_>,
+    ) -> Self::Return {
+        let var_name = ctx.ID().unwrap().get_text();
+
+        self.memory.add(var_name, Value::Void);
 
         Value::Void
     }
@@ -275,6 +290,30 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
     // Statements {
     //
 
+    fn visit_block(&mut self, ctx: &impparser::BlockContext<'_>) -> Self::Return {
+        self.memory.push_scope();
+
+        for node in ctx.stmt_all() {
+            self.visit(&*node);
+        }
+
+        self.memory.pop_scope();
+
+        Value::Void
+    }
+
+    fn visit_optionalBlock(&mut self, ctx: &impparser::OptionalBlockContext<'_>) -> Self::Return {
+        self.memory.push_scope();
+
+        for node in ctx.stmt_all() {
+            self.visit(&*node);
+        }
+
+        self.memory.pop_scope();
+
+        Value::Void
+    }
+
     fn visit_print(&mut self, ctx: &impparser::PrintContext<'_>) -> Self::Return {
         let str = self.visit(&*ctx.exp().unwrap());
         println!("{}", str);
@@ -298,10 +337,7 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
     fn visit_if(&mut self, ctx: &impparser::IfContext<'_>) -> Self::Return {
         let condition = self.visit(&*ctx.exp().unwrap());
         if let Value::Bool(true) = condition {
-            // self.visit(&*ctx.stmt().unwrap())
-            for node in ctx.stmt_all() {
-                self.visit(&*node);
-            }
+            self.visit(&*ctx.block().unwrap());
         }
 
         Value::Void
@@ -318,10 +354,9 @@ impl ImpVisitorCompat<'_> for ImpInterpreter {
 
     fn visit_while(&mut self, ctx: &impparser::WhileContext<'_>) -> Self::Return {
         let mut condition = self.visit(&*ctx.exp().unwrap());
+
         while let Value::Bool(true) = condition {
-            for node in ctx.stmt_all() {
-                self.visit(&*node);
-            }
+            self.visit(&*ctx.optionalBlock().unwrap());
 
             condition = self.visit(&*ctx.exp().unwrap());
         }
@@ -485,8 +520,9 @@ mod test {
     #[test]
     fn test_if_true() {
         let program = "
+         let branch: bool;
          if 3 > 2 {
-           let branch: int = true;
+           branch = true;
          }
         ";
 
@@ -500,15 +536,16 @@ mod test {
     #[test]
     fn test_if_false() {
         let program = "
+         let branch: bool;
          if 3 < 2 {
-           let branch: int = true;
+           branch = true;
          }
         ";
 
         let ast = ImpInterpreter::parse(program);
         let mut interpreter = ImpInterpreter::new();
         let res = interpreter.visit(&*ast);
-        assert_eq!(None, interpreter.memory.get("branch"));
+        assert_eq!(Some(&Value::Void), interpreter.memory.get("branch"));
         assert_eq!(Value::Void, res);
     }
 
@@ -547,10 +584,11 @@ mod test {
     #[test]
     fn test_if_else_true() {
         let program = "
+         let branch: bool;
          if 3 > 2 {
-           let branch: int = true;
+           branch = true;
          } else {
-           let branch: int = false;
+           branch = false;
          }
         ";
 
@@ -564,10 +602,11 @@ mod test {
     #[test]
     fn test_if_else_false() {
         let program = "
+         let branch: bool;
          if 3 < 2 {
-           let branch: int = true;
+           branch = true;
          } else {
-           let branch: int = false;
+           branch = false;
          }
         ";
 
@@ -659,6 +698,42 @@ mod test {
         let mut interpreter = ImpInterpreter::new();
         let res = interpreter.visit(&*ast);
         assert_eq!(Some(&Value::Char('\n')), interpreter.memory.get("ch"));
+        assert_eq!(Value::Void, res);
+    }
+
+    #[test]
+    fn test_block() {
+        let program = "
+         let a: int = 5;
+
+         {
+           let b: int = 0;
+         }
+        ";
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(Some(&Value::Int(5)), interpreter.memory.get("a"));
+        assert_eq!(None, interpreter.memory.get("b"));
+        assert_eq!(Value::Void, res);
+    }
+
+    #[test]
+    fn test_var_scope() {
+        let program = "
+         let a: int;
+         a = 1;
+         if (true) {
+           let b: int = 2;
+         }
+        ";
+
+        let ast = ImpInterpreter::parse(program);
+        let mut interpreter = ImpInterpreter::new();
+        let res = interpreter.visit(&*ast);
+        assert_eq!(Some(&Value::Int(1)), interpreter.memory.get("a"));
+        assert_eq!(None, interpreter.memory.get("b"));
         assert_eq!(Value::Void, res);
     }
 }

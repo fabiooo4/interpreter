@@ -4,16 +4,23 @@ main : prog EOF;
 
 prog : stmt+ | exp;
 
-stmt : decl                                                                         # declaration
-     | ID ASSIGN exp SEMICOLON                                                      # mutation
-     | IF exp LBRACE stmt+ RBRACE                                                   # if
-     | IF exp LBRACE true_branch=stmt+ RBRACE ELSE LBRACE false_branch=stmt+ RBRACE # ifElse
-     | WHILE exp LBRACE stmt* RBRACE                                                # while
-     | PRINT LPAR exp RPAR SEMICOLON                                                # print
-     | TOSTR LPAR exp RPAR SEMICOLON                                                # toStr
+stmt : decl                                             # declaration
+     | ID ASSIGN exp SEMICOLON                          # mutation
+     | IF exp block                                     # if
+     | IF exp true_branch=block ELSE false_branch=block # ifElse
+     | WHILE exp optionalBlock                          # while
+     | PRINT LPAR exp RPAR SEMICOLON                    # print
+     | TOSTR LPAR exp RPAR SEMICOLON                    # toStr
+     | block                                            # codeBlock
      ;
 
-decl : DECLARATION ID ':' TYPE ASSIGN exp SEMICOLON;
+block         : LBRACE stmt+ RBRACE;
+optionalBlock : LBRACE stmt* RBRACE;
+
+
+decl : DECLARATION ID ':' TYPE ASSIGN exp SEMICOLON # assignDeclaration
+     | DECLARATION ID ':' TYPE SEMICOLON            # allocDeclaration
+     ;
 
 // Labels begin with # and rename each node of the ParseTree
 exp : SUB? INT                                  # int

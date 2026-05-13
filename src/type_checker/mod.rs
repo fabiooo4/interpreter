@@ -10,9 +10,10 @@ use crate::{
     parser::{
         implexer::{ADD, AND, DIV, MOD, MUL, OR, SUB},
         impparser::{
-            self, CastContextAttrs, DeclContextAttrs, IdContextAttrs, IfContextAttrs,
-            IfElseContextAttrs, ImpParserContextType, MainContextAttrs, MutationContextAttrs,
-            NegContextAttrs, NotContextAttrs, ParenContextAttrs, WhileContextAttrs,
+            self, AllocDeclarationContextAttrs, AssignDeclarationContextAttrs, CastContextAttrs,
+            IdContextAttrs, IfContextAttrs, IfElseContextAttrs, ImpParserContextType,
+            MainContextAttrs, MutationContextAttrs, NegContextAttrs, NotContextAttrs,
+            ParenContextAttrs, WhileContextAttrs,
         },
         impvisitor::ImpVisitorCompat,
     },
@@ -220,7 +221,10 @@ impl ImpVisitorCompat<'_> for ImpTypeChecker {
     // Variables {
     //
 
-    fn visit_decl(&mut self, ctx: &impparser::DeclContext<'_>) -> Self::Return {
+    fn visit_assignDeclaration(
+        &mut self,
+        ctx: &impparser::AssignDeclarationContext<'_>,
+    ) -> Self::Return {
         let id = ctx.ID().unwrap().get_text();
         let val_typ = self.visit(&*ctx.exp().unwrap());
 
@@ -236,6 +240,24 @@ impl ImpVisitorCompat<'_> for ImpTypeChecker {
         } else {
             panic!("Mismatched types: expected '{}' got '{}'", id_typ, val_typ);
         }
+
+        Type::Void
+    }
+
+    fn visit_allocDeclaration(
+        &mut self,
+        ctx: &impparser::AllocDeclarationContext<'_>,
+    ) -> Self::Return {
+        let id = ctx.ID().unwrap().get_text();
+
+        let id_typ = ctx
+            .TYPE()
+            .unwrap()
+            .get_text()
+            .parse()
+            .unwrap_or_else(|e| panic!("{e}"));
+
+        self.memory.add(id, id_typ);
 
         Type::Void
     }

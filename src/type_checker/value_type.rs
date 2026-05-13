@@ -30,8 +30,8 @@ impl Type {
 
     pub fn cmp_type(&self, rhs: Self) -> Self {
         match (self, rhs) {
-            (Type::Int, Type::Int) => *self,
-            (Type::Float, Type::Float) => *self,
+            (Type::Int, Type::Int) => Type::Bool,
+            (Type::Float, Type::Float) => Type::Bool,
 
             _ => panic!("Type mismatch: cannot compare '{}' and '{}'", self, rhs),
         }
