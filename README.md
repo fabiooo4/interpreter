@@ -7,18 +7,26 @@ purposes.
 ## Language Features
 
 - Variables: Support for declaration with `let` and mutation.
+- Scoping: Dynamic scoping for variable resolution.
 - Control Flow: `if`, `else`, and `while` loops.
 - Data Types: Integers, Floats, Booleans, Strings, and Characters.
+- Type System:
+  - Explicit Casting: Convert between types using built-in functions.
+  - Type Coercion: Automatic conversion during operations (e.g., mixing integers and floats).
 - Operators:
-    - Arithmetic: `+`, `-`, `*`, `/`, `mod`, `^` (power)
-    - Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`
-    - Logical: `and`, `or`, `not`
-    - String: `:` (concatenation)
+  - Arithmetic: `+`, `-`, `*`, `/`, `mod`, `^` (power)
+  - Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`
+  - Logical: `and`, `or`, `not`
+  - String: `:` (concatenation)
 - Built-in Functions: `print()` for output and `to_str()` for type conversion.
 
 ## Usage
 
-Ensure you have Rust and Cargo installed on your system.
+### Dependencies
+
+- [antlr4 fork with Rust target support version 0.3.0-beta](https://github.com/rrevenantt/antlr4rust/releases/tag/antlr4-4.8-2-Rust0.3.0-beta)
+  - Add the path to the antlr4 jar file to the `ANTLR_JAR` environment variable or put it in the project folder
+- Java JDK
 
 ### Running from a File
 
