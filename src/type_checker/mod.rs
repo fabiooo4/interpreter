@@ -10,10 +10,7 @@ use crate::{
     parser::{
         implexer::{ADD, AND, DIV, MOD, MUL, OR, SUB},
         impparser::{
-            self, AllocDeclarationContextAttrs, AssignDeclarationContextAttrs, CastContextAttrs,
-            IdContextAttrs, IfContextAttrs, IfElseContextAttrs, ImpParserContextType,
-            MainContextAttrs, MutationContextAttrs, NegContextAttrs, NotContextAttrs,
-            ParenContextAttrs, WhileContextAttrs,
+            self, AllocDeclarationContextAttrs, AssignDeclarationContextAttrs, BlockContextAttrs, CastContextAttrs, IdContextAttrs, IfContextAttrs, IfElseContextAttrs, ImpParserContextType, MainContextAttrs, MutationContextAttrs, NegContextAttrs, NotContextAttrs, OptionalBlockContextAttrs, ParenContextAttrs, WhileContextAttrs
         },
         impvisitor::ImpVisitorCompat,
     },
@@ -296,6 +293,29 @@ impl ImpVisitorCompat<'_> for ImpTypeChecker {
     //
     // Statements {
     //
+    fn visit_block(&mut self, ctx: &impparser::BlockContext<'_>) -> Self::Return {
+        self.memory.push_scope();
+
+        for node in ctx.stmt_all() {
+            self.visit(&*node);
+        }
+
+        self.memory.pop_scope();
+
+        Type::Void
+    }
+
+    fn visit_optionalBlock(&mut self, ctx: &impparser::OptionalBlockContext<'_>) -> Self::Return {
+        self.memory.push_scope();
+
+        for node in ctx.stmt_all() {
+            self.visit(&*node);
+        }
+
+        self.memory.pop_scope();
+
+        Type::Void
+    }
 
     fn visit_print(&mut self, _ctx: &impparser::PrintContext<'_>) -> Self::Return {
         // TODO: check if the value is convertable to string

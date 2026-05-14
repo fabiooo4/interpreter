@@ -74,7 +74,7 @@ impl<T: Clone> Memory<T> for HashMemory<T> {
 mod test {
     use std::collections::HashMap;
 
-    use crate::memory::{HashMemory, Memory, test};
+    use crate::memory::{HashMemory, Memory};
 
     #[test]
     fn test_global_scope() {
