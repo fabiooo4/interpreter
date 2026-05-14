@@ -47,9 +47,9 @@ cargo run
 ## Example Program
 
 ```rust
-let n = 10;
-let i = 0;
-let sum = 0;
+let n: float = 10.0;
+let i: int = 0;
+let sum: int = 0;
 
 while i < n {
     sum = sum + i;
